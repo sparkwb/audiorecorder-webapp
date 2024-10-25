@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://i.ibb.co/fSYf6LH/web.png" type="image/png">
+    <title>Voice Recorder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://i.ibb.co/NmXDCws/download.jpg');
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        button, a {
+            display: block;
+            font-size: 18px;
+            padding: 15px 30px;
+            margin: 15px auto;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            width: 100%;
+        }
+        #recordButton {
+            background-color: #28a745;
+            color: white;
+        }
+        #recordButton:hover {
+            background-color: #218838;
+        }
+        #stopButton {
+            background-color: #dc3545;
+            color: white;
+            display: none;
+        }
+        #stopButton:hover {
+            background-color: #c82333;
+        }
+        button:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+        audio {
+            display: block;
+            margin-top: 20px;
+            width: 100%;
+        }
+        #downloadLink {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            width: 80%; /* Reduce width to avoid overflowing */
+            margin-left: auto;
+            margin-right: auto; /* Center it */
+        }
+        #downloadLink:hover {
+            background-color: #0056b3;
+        }
+        #loadingLabel {
+            display: none;
+            color: #ff9900;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #recordingLabel {
+            display: none;
+            color: #ff0000;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #audioPlayback {
+            display: none;
+        }
+        #doRecordingAgainButton {
+            display: none;
+            background-color: #007bff;
+            color: white;
+            margin: 15px auto;
+            width: 100%;
+        }
+        #doRecordingAgainButton:hover {
+            background-color: #0056b3;
+        }
+        #goHomeButton {
+            background-color: #ff9800;
+            color: white;
+            margin-top: 10px;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            width: 80%; /* Reduce width to avoid overflowing */
+            display: block;
+            margin-left: auto;
+            margin-right: auto; /* Center it */
+        }
+        #goHomeButton:hover {
+            background-color: #e68900;
+        }
+        .footer {
+            margin-top: 20px;
+            color: #555;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voice Recorder</h1>
+        <button id="recordButton">Start Recording</button>
+        <button id="stopButton" disabled>Stop Recording</button>
+        <label id="recordingLabel">Recording...</label>
+        <p id="loadingLabel">Processing recording...</p>
+        <audio id="audioPlayback" controls></audio>
+        <a id="downloadLink" style="display:none">Download Recording</a>
+        <button id="doRecordingAgainButton">Do Recording Again</button>
+        <a href="https://kevinspark.rf.gd" id="goHomeButton">Go back to Home</a>
+        <div class="footer">Made By SparkDev</div>
+    </div>
+
+    <script>
+        let chunks = [];
+        let recorder;
+        let audioBlob;
+
+        const recordButton = document.getElementById("recordButton");
+        const stopButton = document.getElementById("stopButton");
+        const audioPlayback = document.getElementById("audioPlayback");
+        const downloadLink = document.getElementById("downloadLink");
+        const loadingLabel = document.getElementById("loadingLabel");
+        const recordingLabel = document.getElementById("recordingLabel");
+        const doRecordingAgainButton = document.getElementById("doRecordingAgainButton");
+
+        recordButton.addEventListener("click", () => {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    recorder = new MediaRecorder(stream);
+                    recordButton.style.display = 'none';
+                    stopButton.disabled = false;
+                    stopButton.style.display = 'inline';
+                    recordingLabel.style.display = 'block';
+                    chunks = [];
+                    recorder.start();
+
+                    recorder.ondataavailable = event => {
+                        chunks.push(event.data);
+                    };
+
+                    recorder.onstop = () => {
+                        audioBlob = new Blob(chunks, { type: "audio/wav" });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayback.src = audioUrl;
+
+                        loadingLabel.style.display = 'block';
+
+                        setTimeout(() => {
+                            loadingLabel.style.display = 'none';
+                            audioPlayback.style.display = 'block';
+                        }, 1000);
+
+                        downloadLink.href = audioUrl;
+                        downloadLink.download = "recording.wav";
+                        downloadLink.style.display = "block";
+                        downloadLink.textContent = "Download Recording";
+
+                        doRecordingAgainButton.style.display = 'block';
+                        stopButton.style.display = 'none';
+                        recordingLabel.style.display = 'none';
+                    };
+                })
+                .catch(error => {
+                    console.error("Microphone access denied: ", error);
+                    alert("Please allow microphone access to use the voice recorder.");
+                });
+        });
+
+        stopButton.addEventListener("click", () => {
+            if (recorder) {
+                recorder.stop();
+            }
+            stopButton.disabled = true;
+            loadingLabel.style.display = 'block';
+        });
+
+        doRecordingAgainButton.addEventListener("click", () => {
+            audioPlayback.pause();
+            audioPlayback.currentTime = 0;
+            audioPlayback.style.display = 'none';
+            downloadLink.style.display = 'none';
+            doRecordingAgainButton.style.display = 'none';
+            recordButton.style.display = 'inline';
+            stopButton.style.display = 'none';
+            recordingLabel.style.display = 'none';
+            loadingLabel.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
